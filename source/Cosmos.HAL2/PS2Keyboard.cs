@@ -23,6 +23,9 @@ namespace Cosmos.HAL
 
         public byte PS2Port { get; }
 
+        public byte ScanCodeSet { get; private set; }
+        private bool scanCodeSet2Skip = false;
+
         private PS2Controller mPS2Controller = Global.PS2Controller;
         private Debugger mDebugger = new("PS2Keyboard");
 
@@ -49,19 +52,37 @@ namespace Cosmos.HAL
 
             UpdateLeds();
             Global.debugger.SendInternal("(PS/2 Keyboard) Leds updated");
+            ScanCodeSet = GetScanCodeSet();
         }
 
         private void HandleIRQ(ref INTs.IRQContext aContext)
         {
-            byte xScanCode = IOPort.Read8(Cosmos.Core.IOGroup.PS2Controller.Data);
-            bool xReleased = (xScanCode & 0x80) == 0x80;
+            byte code = IOPort.Read8(Cosmos.Core.IOGroup.PS2Controller.Data);
+            bool released = false;
 
-            if (xReleased)
+            if (ScanCodeSet == 1)
             {
-                xScanCode = (byte)(xScanCode ^ 0x80);
+                released = (code & 0x80) == 0x80;
+                if (released) code ^= 0x80;
+            }
+            else if (ScanCodeSet == 2)
+            {
+                if (code == 0xF0)
+                {
+                    scanCodeSet2Skip = true;
+                    return;
+                }
+
+                released = scanCodeSet2Skip;
+                scanCodeSet2Skip = false;
+            }
+            else // VMWare
+            {
+                released = (code & 0x80) != 0;
+                if (released) code ^= 0x80;
             }
 
-            OnKeyPressed?.Invoke(xScanCode, xReleased);
+            OnKeyPressed?.Invoke(code, released);
         }
 
         /// <summary>
@@ -89,7 +110,7 @@ namespace Cosmos.HAL
         /// Gets the current keyboard scan code set.
         /// </summary>
         /// <returns>Returns the current scan code set.</returns>
-        private byte GetScanCodeSet()
+        public byte GetScanCodeSet()
         {
             SendCommand(Command.GetOrSetScanCodeSet, 0);
             return mPS2Controller.ReadByteAfterAck();
@@ -99,7 +120,7 @@ namespace Cosmos.HAL
         /// Sets the scan code set.
         /// </summary>
         /// <param name="aScanCodeSet">The scan code set to set. Can be 1, 2 or 3.</param>
-        private void SetScanCodeSet(byte aScanCodeSet)
+        public void SetScanCodeSet(byte aScanCodeSet)
         {
             if (aScanCodeSet == 1 || aScanCodeSet == 2 || aScanCodeSet == 3)
             {
