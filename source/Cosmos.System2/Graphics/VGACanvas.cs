@@ -90,8 +90,17 @@ namespace Cosmos.System.Graphics
         {
             if (preventOffBoundPixels)
             {
-                aWidth = Math.Min(aWidth, (int)Mode.Width - aXStart);
-                aHeight = Math.Min(aHeight, (int)Mode.Height - aYStart);
+                int dx = Math.Max(0, -aXStart);
+                int dy = Math.Max(0, -aYStart);
+
+                aWidth = Math.Min(aWidth - dx, (int)Mode.Width - Math.Max(0, aXStart));
+                aWidth = Math.Min(aWidth - dy, (int)Mode.Height - Math.Max(0, aYStart));
+
+                aXStart = Math.Max(0, aXStart);
+                aYStart = Math.Max(0, aYStart);
+
+                if (aWidth <= 0 || aHeight <= 0)
+                    return;
             }
             driver.DrawFilledRectangle(aXStart, aYStart, aWidth, aHeight, driver.GetClosestColorInPalette(aColor));
         }
@@ -123,18 +132,42 @@ namespace Cosmos.System.Graphics
             }
         }
 
-        public override void DrawPoint(Color aColor, int aX, int aY)
+        public override void DrawPoint(Color aColor, int aX, int aY, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (aX < 0 || aX >= Mode.Width || aY < 0 || aY >= Mode.Height)
+                {
+                    return;
+                }
+            }
+
             driver.SetPixel((uint)aX, (uint)aY, aColor);
         }
 
-        public override void DrawPoint(uint aColor, int aX, int aY)
+        public override void DrawPoint(uint aColor, int aX, int aY, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (aX < 0 || aX >= Mode.Width || aY < 0 || aY >= Mode.Height)
+                {
+                    return;
+                }
+            }
+
             driver.SetPixel((uint)aX, (uint)aY, aColor);
         }
 
-        public override void DrawPoint(int aColor, int aX, int aY)
+        public override void DrawPoint(int aColor, int aX, int aY, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (aX < 0 || aX >= Mode.Width || aY < 0 || aX >= Mode.Height)
+                {
+                    return;
+                }
+            }
+
             driver.SetPixel((uint)aX, (uint)aY, (uint)aColor);
         }
 

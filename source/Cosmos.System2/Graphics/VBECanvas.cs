@@ -187,8 +187,16 @@ namespace Cosmos.System.Graphics
          * be implemented is better to not check the validity of the arguments here or it will repeat the check for any point
          * to be drawn slowing down all.
          */
-        public override void DrawPoint(Color aColor, int aX, int aY)
+        public override void DrawPoint(Color aColor, int aX, int aY, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (aX < 0 || aX >= mode.Width || aY < 0 || aY >= mode.Height)
+                {
+                    return;
+                }
+            }
+
             uint offset;
 
             /*
@@ -234,8 +242,16 @@ namespace Cosmos.System.Graphics
             }
         }
 
-        public override void DrawPoint(uint aColor, int aX, int aY)
+        public override void DrawPoint(uint aColor, int aX, int aY, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (aX < 0 || aX >= mode.Width || aY < 0 || aY >= mode.Height)
+                {
+                    return;
+                }
+            }
+
             uint offset;
 
             switch (Mode.ColorDepth)
@@ -262,12 +278,20 @@ namespace Cosmos.System.Graphics
             }
         }
 
-        public override void DrawPoint(int aColor, int aX, int aY)
+        public override void DrawPoint(int aColor, int aX, int aY, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (aX < 0 || aX >= mode.Width || aY < 0 || aY >= mode.Height)
+                {
+                    return;
+                }
+            }
+
             DrawPoint((uint)aColor, aX, aY);
         }
 
-        public override void DrawArray(Color[] aColors, int aX, int aY, int aWidth, int aHeight)
+        public override void DrawArray(Color[] aColors, int aX, int aY, int aWidth, int aHeight, bool preventOffBoundPixels = true)
         {
             ThrowIfCoordNotValid(aX, aY);
             ThrowIfCoordNotValid(aX + aWidth, aY + aHeight);
@@ -276,32 +300,40 @@ namespace Cosmos.System.Graphics
             {
                 for (int ii = 0; ii < aY; ii++)
                 {
-                    DrawPoint(aColors[i + (ii * aWidth)], i, ii);
+                    DrawPoint(aColors[i + (ii * aWidth)], i, ii, preventOffBoundPixels);
                 }
             }
         }
 
-        public override void DrawArray(int[] aColors, int aX, int aY, int aWidth, int aHeight)
+        public override void DrawArray(int[] aColors, int aX, int aY, int aWidth, int aHeight, bool preventOffBoundPixels = true)
         {
             for (int i = 0; i < aHeight; i++)
             {
-                if (i >= mode.Height)
+                if (preventOffBoundPixels)
                 {
-                    return;
+                    if (aY >= Mode.Height || aY + aHeight <= 0)
+                    {
+                        return;
+                    }
                 }
+
                 int destinationIndex = (aY + i) * (int)mode.Width + aX;
                 driver.CopyVRAM(destinationIndex, aColors, i * aWidth, aWidth);
             }
         }
 
-        public override void DrawArray(int[] aColors, int aX, int aY, int aWidth, int aHeight, int startIndex)
+        public override void DrawArray(int[] aColors, int aX, int aY, int aWidth, int aHeight, int startIndex, bool preventOffBoundPixels = true)
         {
             for (int i = 0; i < aHeight; i++)
             {
-                if (i >= mode.Height)
+                if (preventOffBoundPixels)
                 {
-                    return;
+                    if (aY >= Mode.Height || aY + aHeight <= 0)
+                    {
+                        return;
+                    }
                 }
+
                 int destinationIndex = (aY + i) * (int)mode.Width + aX;
                 driver.CopyVRAM(destinationIndex, aColors, i * aWidth + startIndex, aWidth);
             }
@@ -309,15 +341,27 @@ namespace Cosmos.System.Graphics
 
         public override void DrawFilledRectangle(Color aColor, int aX, int aY, int aWidth, int aHeight, bool preventOffBoundPixels = true)
         {
-            // ClearVRAM clears one uint at a time. So we clear pixelwise not byte wise. That's why we divide by 32 and not 8.
             if (preventOffBoundPixels)
             {
-                aWidth = (int)(Math.Min(aWidth, Mode.Width - aX) * (int)Mode.ColorDepth / 32);
+                int dx = Math.Max(0, -aX);
+                int dy = Math.Max(0, -aY);
+
+                aWidth = Math.Min(aWidth - dx, (int)Mode.Width - Math.Max(0, aX));
+                aHeight = Math.Min(aHeight - dy, (int)Mode.Height - Math.Max(0, aY));
+
+                aX = Math.Max(0, aX);
+                aY = Math.Max(0, aY);
+
+                if (aWidth <= 0 || aHeight <= 0)
+                    return;
             }
-            var color = aColor.ToArgb();
-            for (int i = aY; i < aY + aHeight; i++)
+
+            int widthInUInts = (int)(aWidth * (int)Mode.ColorDepth / 32);
+            int color = aColor.ToArgb();
+
+            for (int i = 0; i < aHeight; i++)
             {
-                driver.ClearVRAM(GetPointOffset(aX, i), aWidth, color);
+                driver.ClearVRAM(GetPointOffset(aX, aY + i), widthInUInts, color);
             }
         }
 

@@ -98,7 +98,8 @@ namespace Cosmos.System.Graphics
         /// <param name="color">The color to draw with.</param>
         /// <param name="x">The X coordinate.</param>
         /// <param name="y">The Y coordinate.</param>
-        public abstract void DrawPoint(Color color, int x, int y);
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public abstract void DrawPoint(Color color, int x, int y, bool preventOffBoundPixels = true);
 
         /// <summary>
         /// Sets the pixel at the given coordinates to the specified <paramref name="color"/>, without unnecessary color operations.
@@ -106,7 +107,8 @@ namespace Cosmos.System.Graphics
         /// <param name="color">The color to draw with (raw argb).</param>
         /// <param name="x">The X coordinate.</param>
         /// <param name="y">The Y coordinate.</param>
-        public abstract void DrawPoint(uint color, int x, int y);
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public abstract void DrawPoint(uint color, int x, int y, bool preventOffBoundPixels = true);
 
         /// <summary>
         /// Sets the pixel at the given coordinates to the specified <paramref name="color"/>. without ToArgb()
@@ -114,7 +116,8 @@ namespace Cosmos.System.Graphics
         /// <param name="color">The color to draw with (raw argb).</param>
         /// <param name="x">The X coordinate.</param>
         /// <param name="y">The Y coordinate.</param>
-        public abstract void DrawPoint(int color, int x, int y);
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public abstract void DrawPoint(int color, int x, int y, bool preventOffBoundPixels = true);
 
         /// <summary>
         /// The name of the Canvas implementation.
@@ -155,13 +158,14 @@ namespace Cosmos.System.Graphics
         /// <param name="y">The Y coordinate.</param>
         /// <param name="width">The width of the drawn bitmap.</param>
         /// <param name="height">This parameter is unused.</param>
-        public virtual void DrawArray(Color[] colors, int x, int y, int width, int height)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawArray(Color[] colors, int x, int y, int width, int height, bool preventOffBoundPixels = true)
         {
             for (int X = 0; X < width; X++)
             {
                 for (int Y = 0; Y < height; Y++)
                 {
-                    DrawPoint(colors[Y * width + X], x + X, y + Y);
+                    DrawPoint(colors[Y * width + X], x + X, y + Y, preventOffBoundPixels);
                 }
             }
         }
@@ -175,13 +179,14 @@ namespace Cosmos.System.Graphics
         /// <param name="y">The Y coordinate.</param>
         /// <param name="width">The width of the drawn bitmap.</param>
         /// <param name="height">The height of the drawn bitmap.</param>
-        public virtual void DrawArray(int[] colors, int x, int y, int width, int height)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawArray(int[] colors, int x, int y, int width, int height, bool preventOffBoundPixels = true)
         {
             for (int X = 0; X < width; X++)
             {
                 for (int Y = 0; Y < height; Y++)
                 {
-                    DrawPoint(colors[Y * width + X], x + X, y + Y);
+                    DrawPoint(colors[Y * width + X], x + X, y + Y, preventOffBoundPixels);
                 }
             }
         }
@@ -196,13 +201,14 @@ namespace Cosmos.System.Graphics
         /// <param name="width">The width of the drawn bitmap.</param>
         /// <param name="height">The height of the drawn bitmap.</param>
         /// <param name="startIndex">int[] colors tarting position</param>
-        public virtual void DrawArray(int[] colors, int x, int y, int width, int height, int startIndex)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawArray(int[] colors, int x, int y, int width, int height, int startIndex, bool preventOffBoundPixels = true)
         {
             for (int X = 0; X < width; X++)
             {
                 for (int Y = 0; Y < height; Y++)
                 {
-                    DrawPoint(colors[Y * width + X + startIndex], x + X, y + Y);
+                    DrawPoint(colors[Y * width + X + startIndex], x + X, y + Y, preventOffBoundPixels);
                 }
             }
         }
@@ -378,7 +384,7 @@ namespace Cosmos.System.Graphics
         /// <param name="y0">The Y center coordinate.</param>
         /// <param name="radius">The radius of the circle to draw.</param>
         /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
-        public virtual void DrawFilledCircle(Color color, int x0, int y0, int radius)
+        public virtual void DrawFilledCircle(Color color, int x0, int y0, int radius, bool preventOffBoundPixels = true)
         {
             int x = radius;
             int y = 0;
@@ -391,13 +397,13 @@ namespace Cosmos.System.Graphics
                 for (int i = x0 - x; i <= x0 + x; i++)
                 {
 
-                    DrawPoint(color, i, y0 + y);
-                    DrawPoint(color, i, y0 - y);
+                    DrawPoint(color, i, y0 + y, preventOffBoundPixels);
+                    DrawPoint(color, i, y0 - y, preventOffBoundPixels);
                 }
                 for (int i = x0 - y; i <= x0 + y; i++)
                 {
-                    DrawPoint(color, i, y0 + x);
-                    DrawPoint(color, i, y0 - x);
+                    DrawPoint(color, i, y0 + x, preventOffBoundPixels);
+                    DrawPoint(color, i, y0 - x, preventOffBoundPixels);
                 }
 
                 y++;
@@ -459,7 +465,8 @@ namespace Cosmos.System.Graphics
         /// <param name="yCenter">The Y center coordinate.</param>
         /// <param name="xR">The X radius.</param>
         /// <param name="yR">The Y radius.</param>
-        public virtual void DrawFilledEllipse(Color color, int xCenter, int yCenter, int yR, int xR)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawFilledEllipse(Color color, int xCenter, int yCenter, int yR, int xR, bool preventOffBoundPixels = true)
         {
             for (int y = -yR; y <= yR; y++)
             {
@@ -467,7 +474,7 @@ namespace Cosmos.System.Graphics
                 {
                     if ((x * x * yR * yR) + (y * y * xR * xR) <= yR * yR * xR * xR)
                     {
-                        DrawPoint(color, xCenter + x, yCenter + y);
+                        DrawPoint(color, xCenter + x, yCenter + y, preventOffBoundPixels);
                     }
                 }
             }
@@ -483,7 +490,8 @@ namespace Cosmos.System.Graphics
 		/// <param name="color">The color of the arc.</param>
 		/// <param name="startAngle">The starting angle of the arc, in degrees.</param>
 		/// <param name="endAngle">The ending angle of the arc, in degrees.</param>
-        public virtual void DrawArc(int x, int y, int width, int height, Color color, int startAngle = 0, int endAngle = 360)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawArc(int x, int y, int width, int height, Color color, int startAngle = 0, int endAngle = 360, bool preventOffBoundPixels = true)
         {
             if (width == 0 || height == 0)
             {
@@ -495,7 +503,7 @@ namespace Cosmos.System.Graphics
                 double angleRadians = Math.PI * angle / 180;
                 int IX = (int)(width * Math.Cos(angleRadians));
                 int IY = (int)(height * Math.Sin(angleRadians));
-                DrawPoint(color, x + IX, y + IY);
+                DrawPoint(color, x + IX, y + IY, preventOffBoundPixels);
             }
         }
 
@@ -567,6 +575,7 @@ namespace Cosmos.System.Graphics
         /// <param name="yStart">The starting point Y coordinate.</param>
         /// <param name="width">The width of the rectangle.</param>
         /// <param name="height">The height of the rectangle.</param>
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
         public virtual void DrawFilledRectangle(Color color, int xStart, int yStart, int width, int height, bool preventOffBoundPixels = true)
         {
             if (height == -1)
@@ -575,8 +584,17 @@ namespace Cosmos.System.Graphics
             }
             if (preventOffBoundPixels)
             {
-                width = Math.Min(width, (int)Mode.Width - xStart);
-                height = Math.Min(height, (int)Mode.Height - yStart);
+                int dx = Math.Max(0, -xStart);
+                int dy = Math.Max(0, -yStart);
+
+                width = Math.Min(width - dx, (int)Mode.Width - Math.Max(0, xStart));
+                height = Math.Min(height - dy, (int)Mode.Height - Math.Max(0, yStart));
+
+                xStart = Math.Max(0, xStart);
+                yStart = Math.Max(0, yStart);
+
+                if (width <= 0 || height <= 0)
+                    return;
             }
             for (int y = yStart; y < yStart + height; y++)
             {
@@ -797,14 +815,15 @@ namespace Cosmos.System.Graphics
         /// <param name="color">The color to write the string with.</param>
         /// <param name="x">The origin X coordinate.</param>
         /// <param name="y">The origin Y coordinate.</param>
-        public virtual void DrawString(string str, Font font, Color color, int x, int y)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawString(string str, Font font, Color color, int x, int y, bool preventOffBoundPixels = true)
         {
             var len = str.Length;
             var width = font.Width;
 
             for (int i = 0; i < len; i++)
             {
-                DrawChar(str[i], font, color, x, y);
+                DrawChar(str[i], font, color, x, y, preventOffBoundPixels);
                 x += width;
             }
         }
@@ -814,7 +833,8 @@ namespace Cosmos.System.Graphics
         /// </summary>
         /// <param name="c">The character to draw.</param>
         /// <inheritdoc cref="DrawString(string, Font, Color, int, int)"/>
-        public virtual void DrawChar(char c, Font font, Color color, int x, int y)
+        /// <param name="preventOffBoundPixels">Prevents drawing outside the bounds of the canvas.</param>
+        public virtual void DrawChar(char c, Font font, Color color, int x, int y, bool preventOffBoundPixels = true)
         {
             var height = font.Height;
             var width = font.Width;
@@ -823,11 +843,17 @@ namespace Cosmos.System.Graphics
 
             for (int cy = 0; cy < height; cy++)
             {
+                int dy = y + cy;
+                if (preventOffBoundPixels && (dy < 0 || dy >= Mode.Height)) continue;
+
                 for (byte cx = 0; cx < width; cx++)
                 {
+                    int dx = x + cx;
+                    if (preventOffBoundPixels && (dx < 0 || dx >= Mode.Width)) continue;
+
                     if (font.ConvertByteToBitAddress(data[p + cy], cx + 1))
                     {
-                        DrawPoint(color, (ushort)(x + cx), (ushort)(y + cy));
+                        DrawPoint(color, (ushort)dx, (ushort)dy);
                     }
                 }
             }

@@ -65,8 +65,16 @@ namespace Cosmos.System.Graphics
             driver.Disable();
         }
 
-        public override void DrawPoint(Color color, int x, int y)
+        public override void DrawPoint(Color color, int x, int y, bool preventOffBoundPixels = true)
         {
+            if(preventOffBoundPixels)
+            {
+                if (x < 0 || x >= mode.Width || y < 0 || y >= mode.Height)
+                {
+                    return;
+                }
+            }
+
             if (color.A < 255)
             {
                 if (color.A == 0)
@@ -80,17 +88,33 @@ namespace Cosmos.System.Graphics
             driver.SetPixel((uint)x, (uint)y, (uint)color.ToArgb());
         }
 
-        public override void DrawPoint(uint color, int x, int y)
+        public override void DrawPoint(uint color, int x, int y, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (x < 0 || x >= mode.Width || y < 0 || y >= mode.Height)
+                {
+                    return;
+                }
+            }
+
             driver.SetPixel((uint)x, (uint)y, color);
         }
 
-        public override void DrawPoint(int color, int x, int y)
+        public override void DrawPoint(int color, int x, int y, bool preventOffBoundPixels = true)
         {
+            if (preventOffBoundPixels)
+            {
+                if (x < 0 || x >= mode.Width || y < 0 || y >= mode.Height)
+                {
+                    return;
+                }
+            }
+
             driver.SetPixel((uint)x, (uint)y, (uint)color);
         }
 
-        public override void DrawArray(Color[] colors, int x, int y, int width, int height)
+        public override void DrawArray(Color[] colors, int x, int y, int width, int height, bool preventOffBoundPixels = true)
         {
             ThrowIfCoordNotValid(x, y);
             ThrowIfCoordNotValid(x + width, y + height);
@@ -99,27 +123,43 @@ namespace Cosmos.System.Graphics
             {
                 for (int ii = 0; ii < y; ii++)
                 {
-                    DrawPoint(colors[i + (ii * width)], i, ii);
+                    DrawPoint(colors[i + (ii * width)], i, ii, preventOffBoundPixels);
                 }
             }
         }
 
-        public override void DrawArray(int[] colors, int x, int y, int width, int height)
+        public override void DrawArray(int[] colors, int x, int y, int width, int height, bool preventOffBoundPixels = true)
         {
             var frameSize = (int)driver.FrameSize;
 
             for (int i = 0; i < height; i++)
             {
+                if (preventOffBoundPixels)
+                {
+                    if (y >= Mode.Height || y + height <= 0)
+                    {
+                        return;
+                    }
+                }
+
                 driver.videoMemory.Copy(GetPointOffset(x, y + i) + frameSize, colors, i * width, width);
             }
         }
 
-        public override void DrawArray(int[] colors, int x, int y, int width, int height, int startIndex)
+        public override void DrawArray(int[] colors, int x, int y, int width, int height, int startIndex, bool preventOffBoundPixels = true)
         {
             var frameSize = (int)driver.FrameSize;
 
             for (int i = 0; i < height; i++)
             {
+                if (preventOffBoundPixels)
+                {
+                    if (y >= Mode.Height || y + height <= 0)
+                    {
+                        return;
+                    }
+                }
+
                 driver.videoMemory.Copy(GetPointOffset(x, y + i) + frameSize, colors, i * width + startIndex, width);
             }
         }
@@ -130,8 +170,17 @@ namespace Cosmos.System.Graphics
             var frameSize = (int)driver.FrameSize;
             if (preventOffBoundPixels)
             {
-                width = Math.Min(width, (int)mode.Width - xStart);
-                height = Math.Min(height, (int)mode.Height - yStart);
+                int dx = Math.Max(0, -xStart);
+                int dy = Math.Max(0, -yStart);
+
+                width = Math.Min(width - dx, (int)Mode.Width - Math.Max(0, xStart));
+                height = Math.Min(height - dy, (int)Mode.Height - Math.Max(0, yStart));
+
+                xStart = Math.Max(0, xStart);
+                yStart = Math.Max(0, yStart);
+
+                if (width <= 0 || height <= 0)
+                    return;
             }
             for (int i = yStart; i < yStart + height; i++)
             {
@@ -424,19 +473,19 @@ namespace Cosmos.System.Graphics
             driver.DoubleBufferUpdate();
         }
 
-        public override void DrawString(string str, Font font, Color color, int x, int y)
+        public override void DrawString(string str, Font font, Color color, int x, int y, bool preventOffBoundPixels = true)
         {
             var len = str.Length;
             var width = font.Width;
 
             for (int i = 0; i < len; i++)
             {
-                DrawChar(str[i], font, color, x, y);
+                DrawChar(str[i], font, color, x, y, preventOffBoundPixels);
                 x += width;
             }
         }
 
-        public override void DrawChar(char c, Font font, Color color, int x, int y)
+        public override void DrawChar(char c, Font font, Color color, int x, int y, bool preventOffBoundPixels = false)
         {
             var height = font.Height;
             var width = font.Width;
@@ -445,11 +494,17 @@ namespace Cosmos.System.Graphics
 
             for (int cy = 0; cy < height; cy++)
             {
+                int dy = y + cy;
+                if (preventOffBoundPixels && (dy < 0 || dy >= Mode.Height)) continue;
+
                 for (byte cx = 0; cx < width; cx++)
                 {
+                    int dx = x + cx;
+                    if (preventOffBoundPixels && (dx < 0 || dx >= Mode.Width)) continue;
+
                     if (font.ConvertByteToBitAddress(data[p + cy], cx + 1))
                     {
-                        DrawPoint(color, (ushort)(x + cx), (ushort)(y + cy));
+                        DrawPoint(color, (ushort)dx, (ushort)dy);
                     }
                 }
             }
